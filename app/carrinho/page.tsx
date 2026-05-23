@@ -3,9 +3,15 @@
 import { useCart } from '../../lib/cart-context';
 import Link from 'next/link';
 import { useState } from 'react';
+import { recomendar } from '../../lib/recomendacao';
 
 export default function CarrinhoPage() {
-  const { itens, remover, atualizarQuantidade, total } = useCart();
+  const { itens, remover, atualizarQuantidade, total, adicionar } = useCart();
+  
+  const produtoMaisCaro = itens.length > 0 
+    ? itens.reduce((prev, current) => (prev.produto.preco > current.produto.preco) ? prev : current).produto 
+    : null;
+  const recomendados = produtoMaisCaro ? recomendar(produtoMaisCaro.id, 3) : [];
   const [isLoading, setIsLoading] = useState(false);
 
   const handleCheckout = async () => {
@@ -119,6 +125,32 @@ export default function CarrinhoPage() {
           </button>
         </div>
       </div>
+
+      {produtoMaisCaro && recomendados.length > 0 && (
+        <div className="mt-8 bg-white rounded-2xl border border-indigo-100 shadow-sm overflow-hidden">
+          <div className="bg-indigo-50/50 p-6 border-b border-indigo-100">
+            <h2 className="text-2xl font-bold text-indigo-900 text-center">Adicione mais à sua compra</h2>
+            <p className="text-center text-slate-500 mt-1">Combinam perfeitamente com seu {produtoMaisCaro.nome}</p>
+          </div>
+          <div className="p-6 grid grid-cols-1 sm:grid-cols-3 gap-6">
+            {recomendados.map(produto => (
+              <div key={produto.id} className="bg-white rounded-xl p-4 flex flex-col items-center text-center hover:bg-slate-50 transition-colors border border-slate-200">
+                <div className="text-5xl mb-4 bg-slate-50 w-full py-4 rounded-lg flex justify-center items-center">
+                  {produto.imagem_emoji}
+                </div>
+                <h3 className="font-bold text-slate-800 text-sm mb-1 line-clamp-1">{produto.nome}</h3>
+                <span className="text-indigo-600 font-extrabold mb-4">{produto.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                <button 
+                  onClick={(e) => { e.preventDefault(); adicionar(produto); }}
+                  className="bg-white border-2 border-indigo-100 hover:border-indigo-600 hover:text-indigo-600 text-slate-700 px-4 py-2 rounded-lg text-sm font-bold w-full transition-colors mt-auto"
+                >
+                  Adicionar
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
